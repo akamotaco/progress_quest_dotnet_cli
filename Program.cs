@@ -12,14 +12,24 @@ namespace pq_dotnet
             
             var character = new Character();
             var config = new GameConfig();
-
+#region character part
             RollCharacter(ref character, config);
             character.Sold(config);
 
             Console.WriteLine(character);
+#endregion
+            var gameState = new GameState();
+
+            for(int i=0;i<10;++i) {
+                //timer loop
+                int key = GameSystem.ReadKey(1.0f);
+                Console.Write(".");
+                if(key == 'q')
+                    break;
+            }
+
         }
 
-        
         private static void RollCharacter(ref Character character, GameConfig config)
         {
             global_rand = new Random(character.RandomSeed());
