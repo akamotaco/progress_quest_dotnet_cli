@@ -23,7 +23,7 @@ namespace pq_dotnet
 
             while(true) {
                 //timer loop
-                int key = GameSystem.ReadKey(0.1f);
+                int key = GameSystem.ReadKey(1.0f);
                 // Console.Write(".");
                 if(key == 'q')
                     break;
