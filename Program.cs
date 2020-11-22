@@ -23,7 +23,7 @@ namespace pq_dotnet
 
             while(true) {
                 //timer loop
-                int key = GameSystem.ReadKey(1.0f);
+                int key = GameSystem.ReadKey(0.1f);
                 // Console.Write(".");
                 if(key == 'q')
                     break;
@@ -31,6 +31,7 @@ namespace pq_dotnet
 
 
                 PrintAll(character, gameState);
+                Console.WriteLine("[Q]uit key...");
             }
 
         }
@@ -47,7 +48,7 @@ namespace pq_dotnet
                     Console.WriteLine("");
                     break;
                 }
-                Console.Write(gameState.Quests[i].quest+",");
+                Console.Write($"{gameState.Quests[i].quest}[{(gameState.Quests[i].completed ? "X" : " ")}],");
             }
             if(gameState.Quests.Count >= printLimit)
                 Console.WriteLine("...");
@@ -58,7 +59,7 @@ namespace pq_dotnet
                     Console.WriteLine("");
                     break;
                 }
-                Console.Write(gameState.Plots[i].quest+",");
+                Console.Write($"{gameState.Plots[i].quest}[{(gameState.Plots[i].completed ? "X" : " ")}],");
             }
             if(gameState.Plots.Count >= printLimit)
                 Console.WriteLine("...");

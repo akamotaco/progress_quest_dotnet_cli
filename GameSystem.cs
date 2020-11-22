@@ -81,11 +81,11 @@ namespace pq_dotnet
                     if(Split(gameState.Task, 3) == "*") {
                         WinItem(ref character, gameState, config);
                     } else if(Split(gameState.Task, 3) != "") {
-                        AddInventory(character, character.Inventory, LowerCase(Split(gameState.Task,1) + " " +
+                        AddInventory(character, LowerCase(Split(gameState.Task,1) + " " +
                                                             ProperCase(Split(gameState.Task,3))),1);
                     }
                 } else if(gameState.Task == "buying") {
-                    AddInventory(character, character.Inventory, "Gold", -EquipPrice(character));
+                    AddInventory(character, "Gold", -EquipPrice(character));
                     WinEquip(ref character, gameState, config);
                 } else if ((gameState.Task == "market") || (gameState.Task == "sell")) {
                     if (gameState.Task == "sell") {
@@ -94,7 +94,7 @@ namespace pq_dotnet
                         if (Pos(" of ", firstItem.Key) > 0)
                             amt *= (1+gameState.RandomLow(10)) * (1+gameState.RandomLow(character.Traits.Level));
                         character.Inventory.Remove(firstItem.Key);
-                        AddInventory(character, character.Inventory, "Gold", amt);
+                        AddInventory(character, "Gold", amt);
                     }
                     if (character.Inventory.Count > 1) {
                         // character.Inventory.scrollToTop();
@@ -510,11 +510,13 @@ namespace pq_dotnet
 
         private static void WinItem(ref Character character, GameState gameState, GameConfig config)
         {
-            AddInventory(character, character.Inventory, SpecialItem(gameState, config), 1);
+            AddInventory(character, SpecialItem(gameState, config), 1);
         }
 
-        private static void AddInventory(Character character, Dictionary<string, int> inventory, string key, int value)
+        private static void AddInventory(Character character, string key, int value)
         {
+            var inventory = character.Inventory;
+
             var base_value = 0;
             inventory.TryGetValue(key, out base_value);
 
