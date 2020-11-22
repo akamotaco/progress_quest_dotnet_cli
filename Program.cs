@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace pq_dotnet
 {
@@ -20,17 +21,64 @@ namespace pq_dotnet
 #endregion
             var gameState = new GameState(config);
 
-            for(int i=0;i<10;++i) {
+            while(true) {
                 //timer loop
                 int key = GameSystem.ReadKey(1.0f);
-                Console.Write(".");
+                // Console.Write(".");
                 if(key == 'q')
                     break;
                 GameSystem.Step(character, gameState, config);
 
-                Console.WriteLine("TaskBar:"+gameState.TaskBar);
+
+                PrintAll(character, gameState);
             }
 
+        }
+
+        private static void PrintAll(Character character, GameState gameState)
+        {
+            Console.WriteLine("==========================================");
+            Console.WriteLine($"Act:{gameState.Act}\t[{gameState.Kill}]");
+
+            int printLimit = 5;
+            Console.Write("Quests:");
+            for(var i=0;i<printLimit;++i) {
+                if(i >= gameState.Quests.Count) {
+                    Console.WriteLine("");
+                    break;
+                }
+                Console.Write(gameState.Quests[i].quest+",");
+            }
+            if(gameState.Quests.Count >= printLimit)
+                Console.WriteLine("...");
+            
+            Console.Write("Plot:");
+            for(var i=0;i<printLimit;++i) {
+                if(i >= gameState.Plots.Count) {
+                    Console.WriteLine("");
+                    break;
+                }
+                Console.Write(gameState.Plots[i].quest+",");
+            }
+            if(gameState.Plots.Count >= printLimit)
+                Console.WriteLine("...");
+
+            Console.Write("Inventory:");
+            var inv_k = character.Inventory.Keys.ToArray();
+            var inv_v = character.Inventory.Values.ToArray();
+            for(var i=0;i<printLimit;++i) {
+                if(i >= character.Inventory.Count) {
+                    Console.WriteLine("");
+                    break;
+                }
+                Console.Write($"{inv_k[i]}:{inv_v[i]},");
+            }
+            if(character.Inventory.Count >= printLimit)
+                Console.WriteLine("...");
+
+            Console.WriteLine($"Exp:{character.ExpBar}\t Encumbrance:{character.EncumBar}");
+            Console.WriteLine($"Quest:{gameState.QuestBar}\t Plot:{gameState.PlotBar}");
+            Console.WriteLine($"Task:{gameState.Task}{gameState.TaskBar}");
         }
 
         private static void RollCharacter(ref Character character, GameConfig config)

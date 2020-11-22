@@ -24,6 +24,7 @@ namespace pq_dotnet
             this.Act = 0;
             this.QuestMonster = "";
             this.QuestMonsterIndex = -1;
+            this.BestPlot = "Prologue";
             // [FormCreate]
 
             // AllLists = [Traits,Stats,Spells,Equips,Inventory,Plots,Quests];
@@ -37,14 +38,27 @@ namespace pq_dotnet
             this.PlotBar = new ProgressBar("PlotBar", "$time remaining", config.PlotBar.max, config.PlotBar.position);
 
             this.Quests = new List<(string, bool)>();
+            this.Plots = new List<(string, bool)>();
+            this.Plots.Add(("Prologue", false));
             this.Q = new Queue<string>();
+            var pre_queue = new string[] {
+                "task|10|Experiencing an enigmatic and foreboding night vision",
+                "task|6|Much is revealed about that wise old bastard you'd underestimated",
+                "task|6|A shocking series of events leaves you alone and bewildered, but resolute",
+                "task|4|Drawing upon an unrealized reserve of determination, you set out on a long and dangerous journey",
+                "plot|2|Loading"
+                };
+            foreach(var queue in pre_queue)
+                this.Q.Enqueue(queue);
         }
 
         public ProgressBar TaskBar { get; }
         public ProgressBar QuestBar { get; }
         public ProgressBar PlotBar { get; }
         public List<(string quest, bool completed)> Quests { get; }
+        public List<(string quest, bool completed)> Plots { get; }
         public Queue<string> Q { get; internal set; }
+        public string BestPlot { get; internal set; }
 
         internal int Random(int n)
         {

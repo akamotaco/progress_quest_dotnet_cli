@@ -17,6 +17,9 @@ namespace pq_dotnet
             if(Console.KeyAvailable)
                 return Console.ReadKey(true).KeyChar;
             return -1;
+
+            // Thread.Sleep((int)(seconds*1000));
+            // return -1;
         }
 
         static public int Pos(string needle, string haystack) {
@@ -32,15 +35,15 @@ namespace pq_dotnet
                 // ClearAllSelections();
 
                 if (gameState.Kill == "Loading....")
-                gameState.TaskBar.Reset(0);  // Not sure if this is still the ticket
+                    gameState.TaskBar.Reset(0);  // Not sure if this is still the ticket
 
                 // gain XP / level up
                 var gain = Pos("kill|", gameState.Task) == 1;
                 if (gain) {
-                if (character.ExpBar.Done())
-                    LevelUp(ref character, gameState, config);
-                else
-                    character.ExpBar.Increment(gameState.TaskBar.Max / 1000);
+                    if (character.ExpBar.Done())
+                        LevelUp(ref character, gameState, config);
+                    else
+                        character.ExpBar.Increment(gameState.TaskBar.Max / 1000);
                 }
 
                 // advance quest
@@ -54,10 +57,10 @@ namespace pq_dotnet
 
                 // advance plot
                 if (gain || gameState.Act == 0) {
-                if (gameState.PlotBar.Done())
-                    InterplotCinematic(character, gameState, config);
-                else
-                    gameState.PlotBar.Increment(gameState.TaskBar.Max / 1000);
+                    if (gameState.PlotBar.Done())
+                        InterplotCinematic(character, gameState, config);
+                    else
+                        gameState.PlotBar.Increment(gameState.TaskBar.Max / 1000);
                 }
 
                 Dequeue(character, gameState, config);
@@ -78,34 +81,210 @@ namespace pq_dotnet
                     if(Split(gameState.Task, 3) == "*") {
                         WinItem(ref character, gameState, config);
                     } else if(Split(gameState.Task, 3) != "") {
-                        Add(character.Inventory, LowerCase(Split(gameState.Task,1) + " " +
+                        AddInventory(character, character.Inventory, LowerCase(Split(gameState.Task,1) + " " +
                                                             ProperCase(Split(gameState.Task,3))),1);
                     }
                 } else if(gameState.Task == "buying") {
-                Add(character.Inventory, "Gold", -EquipPrice(character));
-                WinEquip(ref character, gameState, config);
+                    AddInventory(character, character.Inventory, "Gold", -EquipPrice(character));
+                    WinEquip(ref character, gameState, config);
                 } else if ((gameState.Task == "market") || (gameState.Task == "sell")) {
-                    string firstItem = "";
-                    int quantity = 0;
                     if (gameState.Task == "sell") {
-                        firstItem = character.Inventory.Keys.ToArray()[0];
-                        quantity = character.Inventory[firstItem];
-                        var amt = quantity * character.Traits.Level;
-                        if (Pos(" of ", firstItem) > 0)
+                        var firstItem = character.Inventory.ToArray()[1];
+                        var amt = firstItem.Value * character.Traits.Level;
+                        if (Pos(" of ", firstItem.Key) > 0)
                             amt *= (1+gameState.RandomLow(10)) * (1+gameState.RandomLow(character.Traits.Level));
-                        character.Inventory.Remove(firstItem);
-                        Add(character.Inventory, "Gold", amt);
+                        character.Inventory.Remove(firstItem.Key);
+                        AddInventory(character, character.Inventory, "Gold", amt);
                     }
                     if (character.Inventory.Count > 1) {
                         // character.Inventory.scrollToTop();
-                        Debug.Assert(firstItem == "");
-                        Task("Selling " + Indefinite(firstItem, quantity),
+                        // Debug.Assert(firstItem == "");
+                        var firstItem = character.Inventory.ToArray()[1];
+                        Task("Selling " + Indefinite(firstItem.Key, firstItem.Value),
                             1 * 1000, gameState);
                         gameState.Task = "sell";
                         break;
                     }
                 }
+
+                var old = gameState.Task;
+                gameState.Task = "";
+                if (gameState.Q.Count > 0) {
+                    var a = Split(gameState.Q.Peek(),0);
+                    var n = StrToInt(Split(gameState.Q.Peek(),1));
+                    var s = Split(gameState.Q.Peek(),2);
+                    if (a == "task" || a == "plot") {
+                        gameState.Q.Dequeue();
+                        if (a == "plot") {
+                            CompleteAct(character, gameState, config);
+                            s = "Loading " + gameState.BestPlot;
+                        }
+                        Task(s, n * 1000, gameState);
+                    } else {
+                        throw new Exception("bah!" + a);
+                    }
+                } else if (character.EncumBar.Done()) {
+                    Task("Heading to market to sell loot",4 * 1000, gameState);
+                    gameState.Task = "market";
+                } else if ((Pos("kill|",old) <= 0) && (old != "heading")) {
+                    if (character.Inventory["Gold"] > EquipPrice(character)) {
+                        Task("Negotiating purchase of better equipment", 5 * 1000, gameState);
+                        gameState.Task = "buying";
+                    } else {
+                        Task("Heading to the killing fields", 4 * 1000, gameState);
+                        gameState.Task = "heading";
+                    }
+                } else {
+                    var nn = character.Traits.Level;
+                    var t = MonsterTask(nn, gameState, config);
+                    var InventoryLabelAlsoGameStyleTag = 3;
+                    // nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
+                    nn = (2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn;
+                    Task("Executing " + t.description, nn, gameState);
+                }
             }
+        }
+
+        private static (string description, int level) MonsterTask(int level, GameState gameState, GameConfig config)
+        {
+            var definite = false;
+            int i;
+            for(i=level; i >=1; --i) {
+                if(Odds(2,5, gameState))
+                    level += RandSign(gameState);
+            }
+            if(level < 1) level = 1;
+            // level = level of puissance of opponent(s) we'll return
+
+            string monster = "";
+            int lev;
+            if(Odds(1,25, gameState)) {
+                // Use an NPC every once in a while
+                monster = " " + Split(Pick(config.Races, gameState), 0);
+                if(Odds(1,2, gameState)) {
+                    monster = "passing" + monster + " " + Split(Pick(config.Klasses, gameState), 0);
+                } else {
+                    monster = PickLow(config.Titles, gameState) + " " + config.GenerateName() + " the" + monster;
+                    definite = true;
+                }
+                lev = level;
+                monster = monster + "|" + IntToStr(level) + "|*";
+            } else if(gameState.QuestMonster != "" && Odds(1,4, gameState)) {
+                // Use the quest monster
+                monster = config.Monsters[gameState.QuestMonsterIndex];
+                lev = StrToInt(Split(monster, 1));
+            } else {
+                // Pick the monster out of so many random ones closest to the level we want
+                monster = Pick(config.Monsters, gameState);
+                lev = StrToInt(Split(monster, 1));
+                for(var ii=0;ii<5;++ii) {
+                    var m1 = Pick(config.Monsters, gameState);
+                    if(Math.Abs(level-StrToInt(Split(m1,1))) < Math.Abs(level-lev)) {
+                        monster = m1;
+                        lev = StrToInt(Split(monster, 1));
+                    }
+                }
+            }
+
+            var result = Split(monster, 0);
+            gameState.Task = "kill|" + monster;
+
+            var qty = 1;
+            if(level-lev > 10) {
+                // lev is too low. multiply...
+                // qty = MathF.Floor((level + gameState.Random(Math.Max(lev,1))) / Math.Max(lev,1));
+                qty = (level + gameState.Random(Math.Max(lev,1))) / Math.Max(lev,1);
+                if(qty < 1) qty = 1;
+                // level = Math.Floor(level / qty);
+                level = level / qty;
+            }
+
+            if((level - lev) <= -10) {
+                result = "imaginary " + result;
+            } else if((level-lev) < -5) {
+                i = 10+(level-lev);
+                i = 5-gameState.Random(i+1);
+                result = Sick(i,Young((lev-level)-i,result));
+            } else if (((level-lev) < 0) && (gameState.Random(2) == 1)) {
+                result = Sick(level-lev,result);
+            } else if (((level-lev) < 0)) {
+                result = Young(level-lev,result);
+            } else if ((level-lev) >= 10) {
+                result = "messianic " + result;
+            } else if ((level-lev) > 5) {
+                i = 10-(level-lev);
+                i = 5-gameState.Random(i+1);
+                result = Big(i,Special((level-lev)-i,result));
+            } else if (((level-lev) > 0) && (gameState.Random(2) == 1)) {
+                result = Big(level-lev,result);
+            } else if (((level-lev) > 0)) {
+                result = Special(level-lev,result);
+            }
+
+            lev = level;
+            level = lev * qty;
+
+            if (!definite) result = Indefinite(result, qty);
+            return (result, level);
+        }
+
+        private static string Special(int m, string s)
+        {
+            if(Pos(" ",s) > 0)
+                return prefix(new string[]{"veteran","cursed","warrior","undead","demon"}, m, s);
+            else
+                return prefix(new string[]{"Battle-","cursed ","Were-","undead ","demon "}, m, s, "");
+        }
+
+        private static string Big(int m, string s)
+        {
+            return prefix(new string[]{"greater","massive","enormous","giant","titanic"}, m ,s);
+        }
+
+        private static string Young(int m, string s)
+        {
+            m = 6 - Math.Abs(m);
+            return prefix(new string[]{"foetal","baby","preadolescent","teenage","underage"}, m, s);
+        }
+
+        private static string Sick(int m, string s)
+        {
+            m = 6 - Math.Abs(m);
+            return prefix(new string[]{"dead","comatose","crippled","sick","undernourished"}, m, s);
+        }
+
+        private static string prefix(string[] a, int m, string s, string sep = " ")
+        {
+            m = Math.Abs(m);
+            if(m < 1 || m > a.Length) return s;
+            return a[m-1] + sep + s;
+        }
+
+        private static string PickLow(string[] s, GameState gameState)
+        {
+            return s[gameState.RandomLow(s.Length)];
+        }
+
+        private static int RandSign(GameState gameState)
+        {
+            return gameState.Random(2) * 2 - 1;
+        }
+
+        private static void CompleteAct(Character character, GameState gameState, GameConfig config)
+        {
+            gameState.CheckAll(gameState.Plots);
+            gameState.Act += 1;
+            gameState.PlotBar.Reset(60 * 60 * (1 + 5 * gameState.Act)); // 1 hr + 5/Act
+            //Plots.AddUI((game.bestplot = 'Act ' + toRoman(game.act)));
+            gameState.BestPlot = "Act " + ToRoman(gameState.Act);
+            gameState.Plots.Add((gameState.BestPlot, false));
+
+            if(gameState.Act > 1) {
+                WinItem(ref character, gameState, config);
+                WinEquip(ref character, gameState, config);
+            }
+
+            // Brag("act");
         }
 
         private static void Task(string caption, int msec, GameState gameState)
@@ -269,7 +448,7 @@ namespace pq_dotnet
 
             // if (!game.Quests) game.Quests = [];
             while (gameState.Quests.Count > 99) gameState.Quests.RemoveAt(0); // shift();
-            Debug.Assert(caption == "");
+            // Debug.Assert(caption == "");
             gameState.Quests.Add((caption, false));
             gameState.BestQuest = caption;
             // Quests.AddUI(caption);
@@ -331,15 +510,15 @@ namespace pq_dotnet
 
         private static void WinItem(ref Character character, GameState gameState, GameConfig config)
         {
-            Add(character.Inventory, SpecialItem(gameState, config), 1);
+            AddInventory(character, character.Inventory, SpecialItem(gameState, config), 1);
         }
 
-        private static void Add(Dictionary<string, int> dict, string key, int value)
+        private static void AddInventory(Character character, Dictionary<string, int> inventory, string key, int value)
         {
             var base_value = 0;
-            dict.TryGetValue(key, out base_value);
+            inventory.TryGetValue(key, out base_value);
 
-            dict[key] = value + base_value;
+            inventory[key] = value + base_value;
 
             /*$IFDEF LOGGING*/
             if (value == 0) return;
@@ -352,6 +531,13 @@ namespace pq_dotnet
             // line = line + ' ' + Indefinite(key, value);
             // Log(line);
             /*$ENDIF*/
+
+            var cubits = 0;
+            var itemList = inventory.Keys.ToArray();
+            for(var i=1;i<itemList.Length;++i) {
+                cubits += inventory[itemList[i]];
+            }
+            character.EncumBar.Reposition(cubits);
         }
 
         private static string SpecialItem(GameState gameState, GameConfig config)
@@ -382,9 +568,33 @@ namespace pq_dotnet
             }
 
             var name = LPick(stuff, character.Traits.Level, gameState);
+            var qual = StrToInt(Split(name, 1));
+            name = Split(name, 0);
+            var plus = character.Traits.Level - qual;
+            if(plus < 0) better = worse;
+            var count = 0;
+            while(count < 2 && plus != 0) {
+                var modifier = Pick(better, gameState);
+                qual = StrToInt(Split(modifier, 1));
+                modifier = Split(modifier, 0);
+                if(Pos(modifier, name) > 0) break; // no repeats
+                if(Math.Abs(plus) < Math.Abs(plus)) break; // too much
+                name = modifier + " " + name;
+                plus -= qual;
+                ++count;
+            }
+            if(plus != 0) name = plus + " " + name;
+            if(plus > 0) name = "+" + name;
+
+            // character.Equips[posn] = name;
+            var keys = character.Equips.Keys.ToArray();
+            var values = character.Equips.Values.ToArray();
+            character.Equips[keys[posn]] = name;
+            character.BestEquip = name;
+            if(posn > 1) character.BestEquip += " " + values[posn];
         }
 
-        private static object LPick(string[] list, int goal, GameState gameState)
+        private static string LPick(string[] list, int goal, GameState gameState)
         {
             var result = Pick(list, gameState);
             for(var i=1; i<=5; ++i) {
@@ -424,12 +634,17 @@ namespace pq_dotnet
 
         private static void WinSpell(ref Character character, GameState gameState, GameConfig config)
         {
-            AddR(character.Spells, config.Spells[gameState.RandomLow(Math.Min(character.GetStat("WiS") + character.Traits.Level, config.Spells.Length))], 1);
+            AddR(character.Spells, config.Spells[gameState.RandomLow(Math.Min(character.GetStat("WIS") + character.Traits.Level, config.Spells.Length))], 1);
         }
 
         private static void AddR(Dictionary<string, string> dict, string key, int value)
         {
-            dict[key] = ToRoman(value + ToArabic(dict[key]));
+            string currentLevelStr;
+            int currentLevel = 0;
+            if(dict.TryGetValue(key, out currentLevelStr))
+                currentLevel = ToArabic(currentLevelStr);
+
+            dict[key] = ToRoman(value + currentLevel);
         }
 
         private static string ToRoman(int n)
@@ -519,9 +734,13 @@ namespace pq_dotnet
                 }
             }
 
-            Debug.Assert(i == "");
+            // Debug.Assert(i == "");
             
-            character.SetStat(i, character.GetStat(i) + 1);
+            var value = character.GetStat(i) + 1;
+            character.SetStat(i, value);
+            if(i == "STR") {
+                character.EncumBar.Reset(10 + value, character.EncumBar.Position);
+            }
         }
 
         private static int Square(int x)

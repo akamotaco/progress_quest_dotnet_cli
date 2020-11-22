@@ -12,18 +12,15 @@ namespace pq_dotnet
 
         private DateTime birthday;
         private DateTime birthstamp;
-        private int elapsed;
-        private string bestequip;
+        // private int elapsed;
+        public string BestEquip;
 
         public Dictionary<string, string> Equips { get; private set; }
         public Dictionary<string, string> Spells { get; private set; }
 
-        private string bestplot;
-
         public ProgressBar ExpBar { get; private set; }
         public ProgressBar EncumBar { get; private set; }
 
-        private string[] queue;
         private DateTime date;
         private DateTime stamp;
 
@@ -43,26 +40,15 @@ namespace pq_dotnet
         internal void Sold(GameConfig config)
         {
             this.Traits = new Traits();
-//     dna: stats.seed,
             this.birthday = new DateTime();
             this.birthstamp = new DateTime();
-            this.elapsed = 0;
-            this.bestequip = "Sharp Rock";
+            this.BestEquip = "Sharp Rock";
             this.Equips = new Dictionary<string, string>();
             this.Inventory = new Dictionary<string, int>();
             this.Inventory["Gold"] = 0;
             this.Spells = new Dictionary<string, string>();
-            this.bestplot = "Prologue";
-            // EncumBar = new ProgressBar("EncumBar", "$position/$max cubits");
             this.ExpBar = new ProgressBar("ExpBar", "$remaining XP needed for next level", config.LevelUpTime(1), 0);
             this.EncumBar = new ProgressBar("EncumBar", "$position/$max cubits", GetStat("STR") + 10, 0);
-            this.queue = new string[] {
-                "task|10|Experiencing an enigmatic and foreboding night vision",
-                "task|6|Much is revealed about that wise old bastard you'd underestimated",
-                "task|6|A shocking series of events leaves you alone and bewildered, but resolute",
-                "task|4|Drawing upon an unrealized reserve of determination, you set out on a long and dangerous journey",
-                "plot|2|Loading"
-                };
 
             this.Traits.Name = config.GenerateName();
             this.Traits.Race = config.RandomRace();
@@ -73,7 +59,7 @@ namespace pq_dotnet
             this.stamp = this.birthstamp;
 
             foreach(var equip in this.Equips.Keys) { this.Equips[equip] = ""; }
-            this.Equips["Weapon"] = this.bestequip;
+            this.Equips["Weapon"] = this.BestEquip;
             this.Equips["Hauberk"] = "-3 Burlap";
 
         }

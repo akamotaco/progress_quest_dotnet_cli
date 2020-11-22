@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace pq_dotnet
 {
@@ -25,11 +26,11 @@ namespace pq_dotnet
             this.Reposition(newPosition);
         }
 
-        private void Reposition(int newPosition)
+        public void Reposition(int newPosition)
         {
             this.Position = Math.Min(newPosition, this.Max);
 
-            this.Percent = (100*this.Position) / this.Max;
+            this.Percent = this.Max == 0 ? 0 : (100*this.Position) / this.Max;
             this.Remaining = MathF.Floor(this.Max - this.Position);
             // this.Time = RoughTime(this.Max - this.Position)
             // this.Hint = template();
