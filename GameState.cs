@@ -25,7 +25,6 @@ namespace pq_dotnet
             this.QuestMonster = "";
             this.QuestMonsterIndex = -1;
             // [FormCreate]
-            // PlotBar =  new ProgressBar("PlotBar", "$time remaining");
 
             // AllLists = [Traits,Stats,Spells,Equips,Inventory,Plots,Quests];
 
@@ -35,13 +34,17 @@ namespace pq_dotnet
 
             this.TaskBar = new ProgressBar("TaskBar", "$percent%", config.TaskBar.max, config.TaskBar.position);
             this.QuestBar = new ProgressBar("QuestBar", "$percent% complete", config.QuestBar.max, config.QuestBar.position);
+            this.PlotBar = new ProgressBar("PlotBar", "$time remaining", config.PlotBar.max, config.PlotBar.position);
 
             this.Quests = new List<(string, bool)>();
+            this.Q = new Queue<string>();
         }
 
         public ProgressBar TaskBar { get; }
         public ProgressBar QuestBar { get; }
+        public ProgressBar PlotBar { get; }
         public List<(string quest, bool completed)> Quests { get; }
+        public Queue<string> Q { get; internal set; }
 
         internal int Random(int n)
         {

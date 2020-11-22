@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace pq_dotnet
 {
@@ -44,22 +45,22 @@ namespace pq_dotnet
 
                 // advance quest
                 if (gain && gameState.Act >= 1) {
-                if (gameState.QuestBar.Done() || gameState.Quests.Count == 0) {
-                    CompleteQuest(ref character, ref gameState, config);
-                } else {
-                    gameState.QuestBar.Increment(gameState.TaskBar.Max / 1000);
-                }
+                    if (gameState.QuestBar.Done() || gameState.Quests.Count == 0) {
+                        CompleteQuest(ref character, ref gameState, config);
+                    } else {
+                        gameState.QuestBar.Increment(gameState.TaskBar.Max / 1000);
+                    }
                 }
 
-                // // advance plot
-                // if (gain || !game.act) {
-                // if (PlotBar.done())
-                //     InterplotCinematic();
-                // else
-                //     PlotBar.increment(TaskBar.Max() / 1000);
-                // }
+                // advance plot
+                if (gain || gameState.Act == 0) {
+                if (gameState.PlotBar.Done())
+                    InterplotCinematic(character, gameState, config);
+                else
+                    gameState.PlotBar.Increment(gameState.TaskBar.Max / 1000);
+                }
 
-                // Dequeue();
+                Dequeue(character, gameState, config);
             }
             else {
                 // var elapsed = timeGetTime() - lasttick;
@@ -68,6 +69,139 @@ namespace pq_dotnet
                 // TaskBar.increment(elapsed);
                 gameState.TaskBar.Increment(1000); // 1000 msec == 1 sec
             }
+        }
+
+        private static void Dequeue(Character character, GameState gameState, GameConfig config)
+        {
+            while(TaskDone(gameState)) {
+                if(Split(gameState.Task, 0) == "kill") {
+                    if(Split(gameState.Task, 3) == "*") {
+                        WinItem(ref character, gameState, config);
+                    } else if(Split(gameState.Task, 3) != "") {
+                        Add(character.Inventory, LowerCase(Split(gameState.Task,1) + " " +
+                                                            ProperCase(Split(gameState.Task,3))),1);
+                    }
+                } else if(gameState.Task == "buying") {
+                Add(character.Inventory, "Gold", -EquipPrice(character));
+                WinEquip(ref character, gameState, config);
+                } else if ((gameState.Task == "market") || (gameState.Task == "sell")) {
+                    string firstItem = "";
+                    int quantity = 0;
+                    if (gameState.Task == "sell") {
+                        firstItem = character.Inventory.Keys.ToArray()[0];
+                        quantity = character.Inventory[firstItem];
+                        var amt = quantity * character.Traits.Level;
+                        if (Pos(" of ", firstItem) > 0)
+                            amt *= (1+gameState.RandomLow(10)) * (1+gameState.RandomLow(character.Traits.Level));
+                        character.Inventory.Remove(firstItem);
+                        Add(character.Inventory, "Gold", amt);
+                    }
+                    if (character.Inventory.Count > 1) {
+                        // character.Inventory.scrollToTop();
+                        Debug.Assert(firstItem == "");
+                        Task("Selling " + Indefinite(firstItem, quantity),
+                            1 * 1000, gameState);
+                        gameState.Task = "sell";
+                        break;
+                    }
+                }
+            }
+        }
+
+        private static void Task(string caption, int msec, GameState gameState)
+        {
+            gameState.Kill = caption + "...";
+            // if (Kill)
+            //     Kill.text(game.kill);
+            // Log(game.kill);
+            gameState.TaskBar.Reset(msec);
+        }
+
+        private static int EquipPrice(Character character)
+        {
+            return 5 * character.Traits.Level * character.Traits.Level +
+                10 * character.Traits.Level +
+                20;
+        }
+
+        private static string ProperCase(string s)
+        {
+            return s.Substring(0,1).ToUpper() + s.Substring(1);
+        }
+
+        private static string LowerCase(string s)
+        {
+            return s.ToLower();
+        }
+
+        private static bool TaskDone(GameState gameState)
+        {
+            return gameState.TaskBar.Done();
+        }
+
+        private static void InterplotCinematic(Character character, GameState gameState, GameConfig config)
+        {
+            switch(gameState.Random(3)) {
+                case 0:
+                    Q(character, gameState, config, "task|1|Exhausted, you arrive at a friendly oasis in a hostile land");
+                    Q(character, gameState, config, "task|2|You greet old friends and meet new allies");
+                    Q(character, gameState, config, "task|2|You are privy to a council of powerful do-gooders");
+                    Q(character, gameState, config, "task|1|There is much to be done. You are chosen!");
+                    break;
+                case 1:
+                    Q(character, gameState, config, "task|1|Your quarry is in sight, but a mighty enemy bars your path!");
+                    var nemesis = NamedMonster(character.Traits.Level+3, gameState, config);
+                    Q(character, gameState, config, "task|4|A desperate struggle commences with " + nemesis);
+                    var s = gameState.Random(3);
+                    for (var i = 1; i <= gameState.Random(1 + gameState.Act + 1); ++i) {
+                    s += 1 + gameState.Random(2);
+                    switch (s % 3) {
+                    case 0: Q(character, gameState, config, "task|2|Locked in grim combat with " + nemesis); break;
+                    case 1: Q(character, gameState, config, "task|2|" + nemesis + " seems to have the upper hand"); break;
+                    case 2: Q(character, gameState, config, "task|2|You seem to gain the advantage over " + nemesis); break;
+                    }
+                    }
+                    Q(character, gameState, config, "task|3|Victory! " + nemesis + " is slain! Exhausted, you lose conciousness");
+                    Q(character, gameState, config, "task|2|You awake in a friendly place, but the road awaits");
+                    break;
+                case 2:
+                    var nemesis2 = ImpressiveGuy(gameState, config);
+                    Q(character, gameState, config, "task|2|Oh sweet relief! You've reached the protection of the good " + nemesis2);
+                    Q(character, gameState, config, "task|3|There is rejoicing, and an unnerving encouter with " + nemesis2 + " in private");
+                    Q(character, gameState, config, "task|2|You forget your " + BoringItem(gameState, config) + " and go back to get it");
+                    Q(character, gameState, config, "task|2|What's this!? You overhear something shocking!");
+                    Q(character, gameState, config, "task|2|Could " + nemesis2 + " be a dirty double-dealer?");
+                    Q(character, gameState, config, "task|3|Who can possibly be trusted with this news!? ... Oh yes, of course");
+                    break;
+                }
+            Q(character, gameState, config, "plot|1|Loading");
+        }
+
+        private static object ImpressiveGuy(GameState gameState, GameConfig config)
+        {
+            return Pick(config.ImpressiveTitles, gameState) +
+                (gameState.Random(2) == 1 ? " of the " + Pick(config.Races, gameState) : " of " + config.GenerateName());
+        }
+
+        private static string NamedMonster(int level, GameState gameState, GameConfig config)
+        {
+            var lev = 0;
+            var result = "";
+            for(var i=0;i<5;++i) {
+                var m = Pick(config.Monsters, gameState);
+                if(result=="" || (Math.Abs(level-StrToInt(Split(m, 1))) < Math.Abs(level-lev))) {
+                    result = Split(m, 0);
+                    lev = StrToInt(Split(m, 1));
+                }
+            }
+
+            return config.GenerateName() + " the " + result;
+        }
+
+        private static void Q(Character character, GameState gameState, GameConfig config, string s)
+        {
+            gameState.Q.Enqueue(s);
+            Dequeue(character, gameState, config);
         }
 
         private static void CompleteQuest(ref Character character, ref GameState gameState, GameConfig config)
