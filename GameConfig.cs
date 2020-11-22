@@ -6,9 +6,17 @@ namespace pq_dotnet
     internal class GameConfig
     {
         private Random rand;
+        public (int position, int max) PlotBar { get; private set; }
+        public (int position, int max) QuestBar { get; private set; }
+        public (int position, int max) TaskBar { get; private set; }
+
         public GameConfig()
         {
             this.rand = new Random();
+            
+            this.PlotBar = (0, 26);
+            this.QuestBar = (0, 1);
+            this.TaskBar = (0, 2000);
 
             this.Traits = new string[]{"Name", "Race", "Class", "Level"};
 
@@ -726,6 +734,12 @@ namespace pq_dotnet
                 result += Pick(KParts[i % 3], rand);
             return result[0].ToString().ToUpper() + result.Substring(1);
         }
+
+        public int LevelUpTime(int level) // seconds
+        {
+            return 20 * level * 60; // 20 minutes per level
+        }
+
 
         private string Pick(string[] a, Random rand)
         {

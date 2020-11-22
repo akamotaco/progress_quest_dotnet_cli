@@ -12,23 +12,18 @@ namespace pq_dotnet
 
         private DateTime birthday;
         private DateTime birthstamp;
-        private string task;
-        private int tasks;
         private int elapsed;
         private string bestequip;
 
         public Dictionary<string, string> Equips { get; private set; }
+        public Dictionary<string, string> Spells { get; private set; }
 
         private int act;
         private string bestplot;
         private string questmonster;
-        private string kill;
 
-        public (int position, int max) ExpBar { get; private set; }
-        public (int position, int max) EncumBar { get; private set; }
-        public (int position, int max) PlotBar { get; private set; }
-        public (int position, int max) QuestBar { get; private set; }
-        public (int position, int max) TaskBar { get; private set; }
+        public ProgressBar ExpBar { get; private set; }
+        public ProgressBar EncumBar { get; private set; }
 
         private string[] queue;
         private DateTime date;
@@ -52,23 +47,18 @@ namespace pq_dotnet
 //     dna: stats.seed,
             this.birthday = new DateTime();
             this.birthstamp = new DateTime();
-            this.task = "";
-            this.tasks = 0;
             this.elapsed = 0;
             this.bestequip = "Sharp Rock";
             this.Equips = new Dictionary<string, string>();
             // this.Inventory = [['Gold', 0]],
-            // this.Spells = [],
+            this.Spells = new Dictionary<string, string>();
             this.act = 0;
             this.bestplot = "Prologue";
             // this.Quests = [],
             this.questmonster = "";
-            this.kill = "Loading....";
-            this.ExpBar = (0, LevelUpTime(1));
-            this.EncumBar = (0, GetStat("STR") + 10);
-            this.PlotBar = (0, 26);
-            this.QuestBar = (0, 1);
-            this.TaskBar = (0, 2000);
+            // EncumBar = new ProgressBar("EncumBar", "$position/$max cubits");
+            this.ExpBar = new ProgressBar("ExpBar", "$remaining XP needed for next level", config.LevelUpTime(1), 0);
+            this.EncumBar = new ProgressBar("EncumBar", "$position/$max cubits", GetStat("STR") + 10, 0);
             this.queue = new string[] {
                 "task|10|Experiencing an enigmatic and foreboding night vision",
                 "task|6|Much is revealed about that wise old bastard you'd underestimated",
@@ -89,11 +79,6 @@ namespace pq_dotnet
             this.Equips["Weapon"] = this.bestequip;
             this.Equips["Hauberk"] = "-3 Burlap";
 
-        }
-
-        private int LevelUpTime(int level) // seconds
-        {
-            return 20 * level * 60; // 20 minutes per level
         }
 
         internal bool SetStat(string stat, int value)

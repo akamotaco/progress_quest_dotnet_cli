@@ -18,7 +18,7 @@ namespace pq_dotnet
 
             Console.WriteLine(character);
 #endregion
-            var gameState = new GameState();
+            var gameState = new GameState(config);
 
             for(int i=0;i<10;++i) {
                 //timer loop
@@ -26,6 +26,9 @@ namespace pq_dotnet
                 Console.Write(".");
                 if(key == 'q')
                     break;
+                GameSystem.Step(character, gameState, config);
+
+                Console.WriteLine("TaskBar:"+gameState.TaskBar);
             }
 
         }
