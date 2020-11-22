@@ -42,14 +42,14 @@ namespace pq_dotnet
                     character.ExpBar.Increment(gameState.TaskBar.Max / 1000);
                 }
 
-                // // advance quest
-                // if (gain && game.act >= 1) {
-                // if (QuestBar.done() || !Quests.length()) {
-                //     CompleteQuest();
-                // } else {
-                //     QuestBar.increment(TaskBar.Max() / 1000);
-                // }
-                // }
+                // advance quest
+                if (gain && gameState.Act >= 1) {
+                if (gameState.QuestBar.Done() || gameState.Quests.Count == 0) {
+                    CompleteQuest(ref character, ref gameState, config);
+                } else {
+                    gameState.QuestBar.Increment(gameState.TaskBar.Max / 1000);
+                }
+                }
 
                 // // advance plot
                 // if (gain || !game.act) {
@@ -66,8 +66,214 @@ namespace pq_dotnet
                 // if (elapsed > 100) elapsed = 100;
                 // if (elapsed < 0) elapsed = 0;
                 // TaskBar.increment(elapsed);
-                gameState.TaskBar.Increment(100);
+                gameState.TaskBar.Increment(1000); // 1000 msec == 1 sec
             }
+        }
+
+        private static void CompleteQuest(ref Character character, ref GameState gameState, GameConfig config)
+        {
+            gameState.QuestBar.Reset(50 + gameState.RandomLow(1000));
+            if(gameState.Quests.Count != 0) {
+                // Log("Quest complete: " + gameState.BestQuest);
+                gameState.CheckAll(gameState.Quests);
+
+                switch(gameState.Random(4)) {
+                    case 0: WinSpell(ref character, gameState, config); break;
+                    case 1: WinEquip(ref character, gameState, config); break;
+                    case 2: WinStat(ref character, gameState, config); break;
+                    case 3: WinItem(ref character, gameState, config); break;
+                }
+            }
+
+            while (gameState.Quests.Count > 99)
+                gameState.Quests.RemoveAt(0);
+
+            gameState.QuestMonster = "";
+
+            string caption = "";
+            switch (gameState.Random(5)) {
+                case 0:
+                    var level = character.Traits.Level;
+                    var lev = 0;
+                    for (var i = 1; i <= 4; ++i) {
+                        var montag = gameState.Random(config.Monsters.Length);
+                        var m = config.Monsters[montag];
+                        var l = StrToInt(Split(m,1));
+                        if (i == 1 || Math.Abs(l - level) < Math.Abs(lev - level)) {
+                            lev = l;
+                            gameState.QuestMonster = m;
+                            gameState.QuestMonsterIndex = montag;
+                        }
+                    }
+                    caption = "Exterminate " + Definite(Split(gameState.QuestMonster,0),2);
+                    break;
+                case 1:
+                    caption = "Seek " + Definite(InterestingItem(gameState, config), 1);
+                    break;
+                case 2:
+                    caption = "Deliver this " + BoringItem(gameState, config);
+                    break;
+                case 3:
+                    caption = "Fetch me " + Indefinite(BoringItem(gameState, config), 1);
+                    break;
+                case 4:
+                    var mlev = 0;
+                    level = character.Traits.Level;
+                    for (var ii = 1; ii <= 2; ++ii) {
+                        var montag = gameState.Random(config.Monsters.Length);
+                        var m = config.Monsters[montag];
+                        var l = StrToInt(Split(m,1));
+                        if ((ii == 1) || (Math.Abs(l - level) < Math.Abs(mlev - level))) {
+                            mlev = l;
+                            gameState.QuestMonster = m;
+                        }
+                    }
+                    caption = "Placate " + Definite(Split(gameState.QuestMonster,0),2);
+                    gameState.QuestMonster = "";  // We're trying to placate them, after all
+                    break;
+            }
+
+            // if (!game.Quests) game.Quests = [];
+            while (gameState.Quests.Count > 99) gameState.Quests.RemoveAt(0); // shift();
+            Debug.Assert(caption == "");
+            gameState.Quests.Add((caption, false));
+            gameState.BestQuest = caption;
+            // Quests.AddUI(caption);
+
+
+            // Log('Commencing quest: ' + caption);
+
+            // SaveGame();
+        }
+
+        private static string Indefinite(string s, int qty)
+        {
+            if(qty == 1) {
+                if(Pos(s[0].ToString(), "AEIOU�aeiou�") > 0)
+                    return "an " + s;
+                else
+                    return "a " + s;
+            } else {
+                return IntToStr(qty) + " " + Plural(s);
+            }
+        }
+
+        private static string IntToStr(int qty)
+        {
+            return qty.ToString();
+        }
+
+        private static string BoringItem(GameState gameState, GameConfig config)
+        {
+            return Pick(config.BoringItems, gameState);
+        }
+
+        private static string Definite(string s, int qty)
+        {
+            if(qty > 1)
+                s = Plural(s);
+            return "the " + s;
+        }
+
+        private static string Plural(string s)
+        {
+            if(Ends(s, "y"))
+                return s.Substring(0,s.Length-1) + "ies";
+            else if(Ends(s, "us"))
+                return s.Substring(0,s.Length-2) + "i";
+            else if(Ends(s,"ch") || Ends(s,"x") || Ends(s,"s") || Ends(s, "sh"))
+                return s + "es";
+            else if(Ends(s,"f"))
+                return s.Substring(s.Length-1) + "ves";
+            else if(Ends(s,"man") || Ends(s,"Man"))
+                return s.Substring(s.Length-2) + "en";
+            else return s + "s";
+        }
+
+        private static bool Ends(string s, string e)
+        {
+            return s.Substring(0,s.Length-e.Length) == e;
+        }
+
+        private static void WinItem(ref Character character, GameState gameState, GameConfig config)
+        {
+            Add(character.Inventory, SpecialItem(gameState, config), 1);
+        }
+
+        private static void Add(Dictionary<string, int> dict, string key, int value)
+        {
+            var base_value = 0;
+            dict.TryGetValue(key, out base_value);
+
+            dict[key] = value + base_value;
+
+            /*$IFDEF LOGGING*/
+            if (value == 0) return;
+            var line = (value > 0) ? "Gained" : "Lost";
+            if (key == "Gold") {
+                key = "gold piece";
+                line = (value > 0) ? "Got paid" : "Spent";
+            }
+            if (value < 0) value = -value;
+            // line = line + ' ' + Indefinite(key, value);
+            // Log(line);
+            /*$ENDIF*/
+        }
+
+        private static string SpecialItem(GameState gameState, GameConfig config)
+        {
+            return InterestingItem(gameState, config) + " of " + Pick(config.ItemOfs, gameState);
+        }
+
+        private static string InterestingItem(GameState gameState, GameConfig config)
+        {
+            return Pick(config.ItemAttrib, gameState) + " " + Pick(config.Specials, gameState);
+        }
+
+        private static void WinEquip(ref Character character, GameState gameState, GameConfig config)
+        {
+            var posn = gameState.Random(character.Equips.Count);
+            string[] stuff;
+            string[] better;
+            string[] worse;
+
+            if(posn == 0) {
+                stuff = config.Weapons;
+                better = config.OffenseAttrib;
+                worse = config.OffenseBad;
+            } else {
+                better = config.DefenseAttrib;
+                worse = config.DefenseBad;
+                stuff = (posn == 1) ? config.Shields : config.Armors;
+            }
+
+            var name = LPick(stuff, character.Traits.Level, gameState);
+        }
+
+        private static object LPick(string[] list, int goal, GameState gameState)
+        {
+            var result = Pick(list, gameState);
+            for(var i=1; i<=5; ++i) {
+                var best = StrToInt(Split(result, 1));
+                var s = Pick(list, gameState);
+                var b1 = StrToInt(Split(s,1));
+                if(Math.Abs(goal-best) > Math.Abs(goal-b1))
+                    result = s;
+            }
+            return result;
+        }
+
+        private static int StrToInt(string s)
+        {
+            return Int32.Parse(s);
+        }
+
+        private static string Split(string s, int field, string separator = null)
+        {
+            if(separator == null) {
+                return s.Split("|")[field];
+            }
+            return s.Split(separator + "|")[field];
         }
 
         private static void LevelUp(ref Character character, GameState gameState, GameConfig config)

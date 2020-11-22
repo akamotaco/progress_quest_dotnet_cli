@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace pq_dotnet
 {
@@ -8,6 +9,11 @@ namespace pq_dotnet
         public string Task;
         public int Tasks;
         public string Kill;
+        public int Act;
+
+        public string QuestMonster;
+        public int QuestMonsterIndex;
+        public string BestQuest;
 
         public GameState(GameConfig config)
         {
@@ -15,10 +21,11 @@ namespace pq_dotnet
             this.random = new Random();
             this.Tasks = 0;
             this.Kill = "Loading....";
+            this.Act = 0;
+            this.QuestMonster = "";
+            this.QuestMonsterIndex = -1;
             // [FormCreate]
             // PlotBar =  new ProgressBar("PlotBar", "$time remaining");
-            // QuestBar = new ProgressBar("QuestBar", "$percent% complete");
-            // TaskBar =  new ProgressBar("TaskBar", "$percent%");
 
             // AllLists = [Traits,Stats,Spells,Equips,Inventory,Plots,Quests];
 
@@ -26,10 +33,15 @@ namespace pq_dotnet
 
             // StartTimer();
 
-            TaskBar = new ProgressBar("QuestBar", "$percent% complete", config.TaskBar.max, config.TaskBar.position);
+            this.TaskBar = new ProgressBar("TaskBar", "$percent%", config.TaskBar.max, config.TaskBar.position);
+            this.QuestBar = new ProgressBar("QuestBar", "$percent% complete", config.QuestBar.max, config.QuestBar.position);
+
+            this.Quests = new List<(string, bool)>();
         }
 
         public ProgressBar TaskBar { get; }
+        public ProgressBar QuestBar { get; }
+        public List<(string quest, bool completed)> Quests { get; }
 
         internal int Random(int n)
         {
@@ -39,6 +51,13 @@ namespace pq_dotnet
         internal int RandomLow(int below)
         {
             return Math.Min(Random(below), Random(below));
+        }
+
+        internal void CheckAll(List<(string quest, bool completed)> quests)
+        {
+            for(var i=0;i<quests.Count;++i) {
+                quests[i] = (quests[i].quest, true);
+            }
         }
 
         // internal delegate int RandomGenerator(int n);

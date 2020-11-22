@@ -18,9 +18,7 @@ namespace pq_dotnet
         public Dictionary<string, string> Equips { get; private set; }
         public Dictionary<string, string> Spells { get; private set; }
 
-        private int act;
         private string bestplot;
-        private string questmonster;
 
         public ProgressBar ExpBar { get; private set; }
         public ProgressBar EncumBar { get; private set; }
@@ -30,6 +28,7 @@ namespace pq_dotnet
         private DateTime stamp;
 
         public string Best { get; internal set; }
+        public Dictionary<string, int> Inventory { get; internal set; }
 
         public Character()
         {
@@ -50,12 +49,10 @@ namespace pq_dotnet
             this.elapsed = 0;
             this.bestequip = "Sharp Rock";
             this.Equips = new Dictionary<string, string>();
-            // this.Inventory = [['Gold', 0]],
+            this.Inventory = new Dictionary<string, int>();
+            this.Inventory["Gold"] = 0;
             this.Spells = new Dictionary<string, string>();
-            this.act = 0;
             this.bestplot = "Prologue";
-            // this.Quests = [],
-            this.questmonster = "";
             // EncumBar = new ProgressBar("EncumBar", "$position/$max cubits");
             this.ExpBar = new ProgressBar("ExpBar", "$remaining XP needed for next level", config.LevelUpTime(1), 0);
             this.EncumBar = new ProgressBar("EncumBar", "$position/$max cubits", GetStat("STR") + 10, 0);
