@@ -37,7 +37,7 @@ namespace Game
             return this.stats.ContainsKey(stat);
         }
 
-        internal void Sold(GameConfig config)
+        internal void Sold(GameConfig config, Random rand)
         {
             this.Traits = new Traits();
             this.birthday = new DateTime();
@@ -51,8 +51,8 @@ namespace Game
             this.EncumBar = new ProgressBar("EncumBar", "$position/$max cubits", GetStat("STR") + 10, 0);
 
             this.Traits.Name = config.GenerateName();
-            this.Traits.Race = config.RandomRace();
-            this.Traits.Class = config.RandomClass();
+            this.Traits.Race = config.RandomRace(rand);
+            this.Traits.Class = config.RandomClass(rand);
             this.Traits.Level = 1;
 
             this.date = this.birthday;

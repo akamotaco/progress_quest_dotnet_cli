@@ -5,8 +5,6 @@ namespace pq_dotnet
 {
     class Program
     {
-        private static Random global_rand;
-
         static void Main(string[] args)
         {
             // brille.Program.Test1();
@@ -15,14 +13,13 @@ namespace pq_dotnet
             // return;
 
             Console.WriteLine("Progress Quest");
-            var config = new Game.GameConfig(new Random());
+            var config = new Game.GameConfig();
 
             var hub = new ECS.SystemHub();
 
 #region add entities    
             var newGame = new Game.NewInstance(config);
             newGame.RollCharacter();
-            newGame.Sold();
             hub.Add(newGame);
 #endregion
 

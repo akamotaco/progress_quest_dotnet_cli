@@ -5,18 +5,11 @@ namespace Game
 {
     public class GameConfig
     {
-        private Random rand;
-
         public (int position, int max) PlotBar { get; private set; }
         public (int position, int max) QuestBar { get; private set; }
         public (int position, int max) TaskBar { get; private set; }
     
-        public GameConfig(Random instance) {
-            if(instance == null)
-                this.rand = new Random();
-            else
-                this.rand = instance;
-            
+        public GameConfig() {
             this.PlotBar = (0, 26);
             this.QuestBar = (0, 1);
             this.TaskBar = (0, 2000);
@@ -711,13 +704,13 @@ namespace Game
             "Archbishop"};
         }
 
-        internal string RandomClass()
+        internal string RandomClass(Random rand)
         {
             var klass = this.Klasses[rand.Next()%this.Klasses.Length];
             return klass.Split("|")[0];
         }
 
-        internal string RandomRace()
+        internal string RandomRace(Random rand)
         {
             var race = this.Races[rand.Next()%this.Races.Length];
             return race.Split("|")[0];

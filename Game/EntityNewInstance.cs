@@ -20,9 +20,9 @@ namespace Game
             RollCharacter(ref character, this.config);
         }
 
-        public void Sold() {
+        internal override void OnCreate() {
 #region character part
-            character.Sold(config);
+            character.Sold(config, this.rand);
             Console.WriteLine(character);
 #endregion
             var gameState = new GameState(rand, config, this);
@@ -30,6 +30,7 @@ namespace Game
             this._collection.Add(character);
             this._collection.Add(gameState);
 #endregion
+            base.OnCreate();
         }
 
         private void RollCharacter(ref Character character, GameConfig config)
