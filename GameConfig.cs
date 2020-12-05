@@ -1,18 +1,21 @@
 using System;
 using System.Linq;
 
-namespace pq_dotnet
+namespace Game
 {
-    internal class GameConfig
+    public class GameConfig
     {
         private Random rand;
+
         public (int position, int max) PlotBar { get; private set; }
         public (int position, int max) QuestBar { get; private set; }
         public (int position, int max) TaskBar { get; private set; }
-
-        public GameConfig()
-        {
-            this.rand = new Random();
+    
+        public GameConfig(Random instance) {
+            if(instance == null)
+                this.rand = new Random();
+            else
+                this.rand = instance;
             
             this.PlotBar = (0, 26);
             this.QuestBar = (0, 1);

@@ -1,6 +1,6 @@
 namespace pq_dotnet
 {
-    internal class Traits
+    public class Traits
     {
         public Traits()
         {

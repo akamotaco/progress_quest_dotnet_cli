@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace pq_dotnet
 {
-    internal class ProgressBar
+    public class ProgressBar
     {
         private string id;
         private string template;

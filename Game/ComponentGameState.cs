@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using pq_dotnet;
 
-namespace pq_dotnet
+namespace Game
 {
-    internal class GameState
+    public class GameState : ECS.Component
     {
         private readonly Random random;
         public string Task;
@@ -15,10 +16,12 @@ namespace pq_dotnet
         public int QuestMonsterIndex;
         public string BestQuest;
 
-        public GameState(GameConfig config)
-        {
+        public GameState(Random instance, GameConfig config, ECS.Entity parent) : base(parent) {
             this.Task = "";
-            this.random = new Random();
+            if(instance == null)
+                this.random = new Random();
+            else
+                this.random = instance;
             this.Tasks = 0;
             this.Kill = "Loading....";
             this.Act = 0;

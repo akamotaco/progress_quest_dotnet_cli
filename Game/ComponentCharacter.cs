@@ -1,9 +1,10 @@
-using System;
 using System.Collections.Generic;
+using System;
+using pq_dotnet;
 
-namespace pq_dotnet
+namespace Game
 {
-    internal class Character
+    public class Character : ECS.Component
     {
         private Dictionary<string, int> stats;
         private int seed;
@@ -27,12 +28,11 @@ namespace pq_dotnet
         public string Best { get; internal set; }
         public Dictionary<string, int> Inventory { get; internal set; }
 
-        public Character()
-        {
+        public Character(ECS.Entity parent) : base(parent) {
             this.stats = new Dictionary<string, int>();
         }
 
-        internal bool hasStat(string stat)
+                internal bool hasStat(string stat)
         {
             return this.stats.ContainsKey(stat);
         }

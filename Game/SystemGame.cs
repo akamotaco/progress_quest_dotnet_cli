@@ -1,32 +1,40 @@
+
+
+using System.Collections.Generic;
+using ECS;
 using System;
 using System.Threading;
-using System.Diagnostics;
-using System.Collections.Generic;
 using System.Linq;
 
-namespace pq_dotnet
+namespace Game
 {
-    public class GameSystem
+    public class Game : ECS.System
     {
-        public static int ReadKey(float seconds, int term=250)
+        public bool IsLoop {get;private set;}
+        private GameConfig config;
+
+        public Game(GameConfig config) : base(typeof(Character), typeof(GameState)){
+            IsLoop = true;
+            this.config = config;
+        }
+        protected override void Proc(int step, List<List<Component>> allComponents)
         {
-            DateTime beginWait = DateTime.Now;
-            while (!Console.KeyAvailable && DateTime.Now.Subtract(beginWait).TotalSeconds < seconds)
-                Thread.Sleep(term);
+            foreach(var components in allComponents) {
+                Character character = components[0] as Character;
+                GameState gameState = components[1] as GameState;
 
-            if(Console.KeyAvailable)
-                return Console.ReadKey(true).KeyChar;
-            return -1;
+                GameUpdate(character, gameState, config);
+            }
 
-            // Thread.Sleep((int)(seconds*1000));
-            // return -1;
+            int key = ReadKey(1.0f);
+            if(key == 'q')
+                IsLoop = false;
+            
+                            // PrintAll(character, gameState);
+            Console.WriteLine("[Q]uit key...");
         }
 
-        static public int Pos(string needle, string haystack) {
-            return haystack.IndexOf(needle) + 1;
-        }
-
-        internal static void Step(Character character, GameState gameState, GameConfig config)
+        private void GameUpdate(Character character, GameState gameState, GameConfig config)
         {
             if(gameState.TaskBar.Done()) {
                 gameState.Tasks += 1;
@@ -72,6 +80,24 @@ namespace pq_dotnet
                 // TaskBar.increment(elapsed);
                 gameState.TaskBar.Increment(1000); // 1000 msec == 1 sec
             }
+        }
+
+        public static int ReadKey(float seconds, int term=250)
+        {
+            DateTime beginWait = DateTime.Now;
+            while (!Console.KeyAvailable && DateTime.Now.Subtract(beginWait).TotalSeconds < seconds)
+                Thread.Sleep(term);
+
+            if(Console.KeyAvailable)
+                return Console.ReadKey(true).KeyChar;
+            return -1;
+
+            // Thread.Sleep((int)(seconds*1000));
+            // return -1;
+        }
+
+                static public int Pos(string needle, string haystack) {
+            return haystack.IndexOf(needle) + 1;
         }
 
         private static void Dequeue(Character character, GameState gameState, GameConfig config)
@@ -759,5 +785,6 @@ namespace pq_dotnet
         {
             return gameState.Random(outof) < chance;
         }
+
     }
 }
