@@ -26,11 +26,10 @@ namespace Game
                 GameUpdate(character, gameState, config);
             }
 
-            int key = ReadKey(1.0f);
+            int key = ReadKey(step/1000.0f);
             if(key == 'q')
                 IsLoop = false;
             
-                            // PrintAll(character, gameState);
             Console.WriteLine("[Q]uit key...");
         }
 

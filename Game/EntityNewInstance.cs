@@ -6,18 +6,26 @@ namespace Game
     public class NewInstance : ECS.Entity
     {
         Random rand;
+        private Character character;
+        private GameConfig config;
+
         public NewInstance(GameConfig config) {
             rand = new Random();
 
-            var character = new Character(this);
-#region character part
-            RollCharacter(ref character, config);
-            character.Sold(config);
+            this.character = new Character(this);
+            this.config = config;
+        }
 
+        public void RollCharacter() {
+            RollCharacter(ref character, this.config);
+        }
+
+        public void Sold() {
+#region character part
+            character.Sold(config);
             Console.WriteLine(character);
 #endregion
             var gameState = new GameState(rand, config, this);
-
 #region add components
             this._collection.Add(character);
             this._collection.Add(gameState);

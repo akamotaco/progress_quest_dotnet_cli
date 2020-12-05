@@ -21,6 +21,8 @@ namespace pq_dotnet
 
 #region add entities    
             var newGame = new Game.NewInstance(config);
+            newGame.RollCharacter();
+            newGame.Sold();
             hub.Add(newGame);
 #endregion
 
@@ -31,7 +33,7 @@ namespace pq_dotnet
 #endregion
 
             while(game.IsLoop) {
-                hub.Step(1);
+                hub.Step(1000);
             }
 
         }
