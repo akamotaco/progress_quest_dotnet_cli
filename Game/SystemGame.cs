@@ -30,7 +30,7 @@ namespace Game
             if(key == 'q')
                 IsLoop = false;
             
-            Console.WriteLine("[Q]uit key...");
+            // Console.WriteLine("[Q]uit key...");
         }
 
         private void GameUpdate(Character character, GameState gameState, GameConfig config)

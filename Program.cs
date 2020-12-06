@@ -7,10 +7,7 @@ namespace pq_dotnet
     {
         static void Main(string[] args)
         {
-            // brille.Program.Test1();
-            // brille.Program.Test2();
-            // brille.Program.Test3();
-            // return;
+            int UiMode = 0;
 
             Console.WriteLine("Progress Quest");
             var config = new Game.GameConfig();
@@ -26,7 +23,17 @@ namespace pq_dotnet
 #region add systems
             var game = new Game.Game(config);
             hub.AddSystem(game);
-            hub.AddSystem(new Game.BasicLog());
+
+            switch(UiMode) {
+                case 0:
+                    hub.AddSystem(new Game.BasicLog());
+                    break;
+                case 1:
+                    hub.AddSystem(new Game.BrailleLog(80, 26));
+                    break;
+                default:
+                    throw new Exception("unknown UiMode.");
+            }
 #endregion
 
             while(game.IsLoop) {

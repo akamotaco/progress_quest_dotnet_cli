@@ -15,6 +15,7 @@ namespace Game
                 var gameState = components[1] as GameState;
 
                 PrintAll(character, gameState);
+                Console.WriteLine("[Q]uit key...");
             }
         }
 
